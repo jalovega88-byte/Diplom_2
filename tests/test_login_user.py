@@ -29,21 +29,27 @@ class TestLoginUser:
 
     @allure.title("Вход с неверными данными: {invalid_field}")
     @pytest.mark.parametrize(
-        "invalid_field",
-        ["email", "password"]
+        "invalid_field, invalid_credentials",
+        [
+            (
+                "email",
+                {"email": "wrong_email@example.com"}
+            ),
+            (
+                "password",
+                {"password": "WrongPassword123"}
+            )
+        ]
     )
     def test_login_with_invalid_credentials(
-        self, created_user, invalid_field
+        self, created_user, invalid_field, invalid_credentials
     ):
         login_data = {
             "email": created_user["email"],
             "password": created_user["password"]
         }
 
-        if invalid_field == "email":
-            login_data["email"] = "wrong_" + created_user["email"]
-        else:
-            login_data["password"] = "WrongPassword123"
+        login_data.update(invalid_credentials)
 
         response = requests.post(
             LOGIN_USER_URL,

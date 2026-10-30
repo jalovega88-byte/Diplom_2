@@ -4,44 +4,28 @@ import pytest
 import requests
 
 from helpers import generate_user_data
-from urls import CREATE_USER_URL, DELETE_USER_URL
+from urls import CREATE_USER_URL
 
 
 @allure.feature("Создание пользователя")
 class TestCreateUser:
 
     @allure.title("Успешная регистрация уникального пользователя")
-    def test_create_unique_user(self):
-        user_data = generate_user_data()
-
+    def test_create_unique_user(self, user_for_registration):
         response = requests.post(
             CREATE_USER_URL,
-            json=user_data,
+            json=user_for_registration["data"],
             timeout=10
         )
 
         response_data = response.json()
+        user_for_registration["token"] = response_data.get("accessToken")
 
-        try:
-            assert response.status_code == 200
-            assert response_data["success"] is True
-            assert "accessToken" in response_data
-            assert "refreshToken" in response_data
-        finally:
-            token = response_data.get("accessToken")
+        assert response.status_code == 200
+        assert response_data["success"] is True
+        assert "accessToken" in response_data
+        assert "refreshToken" in response_data
 
-            if token:
-                delete_response = requests.delete(
-                    DELETE_USER_URL,
-                    headers={"Authorization": token},
-                    timeout=10
-                )
-
-                assert delete_response.status_code == 202, (
-                    f"Не удалось удалить пользователя: "
-                    f"{delete_response.status_code}, "
-                    f"{delete_response.text}"
-                )
 
     @allure.title("Нельзя зарегистрировать пользователя повторно")
     def test_create_existing_user(self, created_user):
